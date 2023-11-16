@@ -1,3 +1,4 @@
+import pickle
 from pathlib import Path
 from typing import Iterator
 
@@ -8,25 +9,23 @@ from mhcflurry.encodable_sequences import EncodableSequences
 from sklearn.model_selection import train_test_split
 
 from mhcpred.config import settings
-from mhcpred.data import get_train_data
+from mhcpred.data import get_train_data, get_test_data
 from mhcpred.hyperparameters import base_hyperparameters
 from mhcpred.class1_binary_nn import Class1BinaryNeuralNetwork
 
 data_path = Path(settings.data_path)
+models_path = Path(settings.models_path)
+output_path = Path(settings.output_path)
+
+
 allele_sequences = pd.read_csv(str(data_path / "allele_sequences.csv"), index_col=0).iloc[:, 0]
 
 df_total_train = get_train_data()
+df_test = get_test_data()
+alleles_in_use = set(df_total_train.allele).union(set(df_test.allele))
 
-# All alleles, not just those with training data.
-full_allele_encoding = AlleleEncoding(
-    alleles=allele_sequences.index.values,
-    allele_to_sequence=allele_sequences.to_dict()
-)
+allele_sequences_in_use = allele_sequences[allele_sequences.index.isin(alleles_in_use)]
 
-allele_sequences_in_use = allele_sequences[allele_sequences.index.isin(df_total_train.allele)]
-
-# Only alleles with training data. For efficiency, we perform model training
-# using only these alleles in the neural network embedding layer.
 allele_encoding = AlleleEncoding(
     alleles=allele_sequences_in_use.index.values,
     allele_to_sequence=allele_sequences_in_use.to_dict()
@@ -97,3 +96,20 @@ model.fit_generator(
     steps_per_epoch=steps_per_epoch,
     epochs=2,
 )
+
+with open(str(models_path / "model.pickle"), "wb") as f:
+    pickle.dump(model, f)
+
+test_peptides = df_test.peptide.values
+test_allele_encoding = AlleleEncoding(
+    alleles=df_test.allele.values,
+    allele_to_sequence=allele_sequences_in_use.to_dict(),
+)
+
+predictions = model.predict(
+    peptides=test_peptides,
+    allele_encoding=test_allele_encoding,
+)
+
+df_test["predictions"] = predictions
+df_test.to_csv(str(output_path / "mhcpred_predictions.csv"), index=False)

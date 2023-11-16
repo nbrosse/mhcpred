@@ -2,9 +2,12 @@ import collections
 import itertools
 import time
 
+import numpy as np
 from mhcflurry import Class1NeuralNetwork
+from mhcflurry.class1_neural_network import DEFAULT_PREDICT_BATCH_SIZE
 from mhcflurry.common import configure_tensorflow
 from mhcflurry.custom_loss import get_loss
+from mhcflurry.encodable_sequences import EncodableSequences
 
 from mhcpred.data_dependent_weights_initialization import lsuv_init
 
@@ -231,3 +234,62 @@ class Class1BinaryNeuralNetwork(Class1NeuralNetwork):
         fit_info["time"] = time.time() - start
         fit_info["num_points"] = mutable_generator_state["yielded_values"]
         self.fit_info.append(dict(fit_info))
+
+    def predict(
+            self,
+            peptides,
+            allele_encoding=None,
+            batch_size=DEFAULT_PREDICT_BATCH_SIZE,
+            output_index=0):
+        """
+        Predict affinities.
+
+        If peptides are specified as EncodableSequences, then the predictions
+        will be cached for this predictor as long as the EncodableSequences
+        object remains in memory. The cache is keyed in the object identity of
+        the EncodableSequences, not the sequences themselves. The cache is used
+        only for allele-specific models (i.e. when allele_encoding is None).
+
+        Parameters
+        ----------
+        peptides : EncodableSequences or list of string
+
+        allele_encoding : AlleleEncoding, optional
+            Only required when this model is a pan-allele model
+
+        batch_size : int
+            batch_size passed to Keras
+
+        output_index : int or None
+            For multi-output models. Gives the output index to return. If set to
+            None, then all outputs are returned as a samples x outputs matrix.
+
+        Returns
+        -------
+        numpy.array of nM affinity predictions
+        """
+        assert self.prediction_cache is not None
+        use_cache = allele_encoding is None and isinstance(peptides, EncodableSequences)
+        if use_cache and peptides in self.prediction_cache:
+            return self.prediction_cache[peptides].copy()
+
+        x_dict = {"peptide": self.peptides_to_network_input(peptides)}
+
+        if allele_encoding is not None:
+            (
+                allele_encoding_input,
+                allele_representations,
+            ) = self.allele_encoding_to_network_input(allele_encoding)
+            x_dict["allele"] = allele_encoding_input
+            self.set_allele_representations(allele_representations)
+            network = self.network()
+        else:
+            network = self.network(borrow=True)
+        raw_predictions = network.predict(x_dict, batch_size=batch_size)
+        predictions = np.array(raw_predictions, dtype="float64")
+        if output_index is not None:
+            predictions = predictions[:, output_index]
+        result = predictions
+        if use_cache:
+            self.prediction_cache[peptides] = result
+        return result

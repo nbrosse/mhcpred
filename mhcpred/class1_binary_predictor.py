@@ -1,7 +1,7 @@
 import collections
 import json
-import logging
 from pathlib import Path
+from typing import Iterator
 
 import numpy as np
 import pandas as pd
@@ -11,10 +11,44 @@ from mhcflurry.encodable_sequences import EncodableSequences
 
 from mhcpred.class1_binary_nn import Class1BinaryNeuralNetwork
 from mhcpred.config import settings
-from mhcpred.data import train_data_iterator
 from mhcpred.hyperparameters import base_hyperparameters
 
 data_path = Path(settings.data_path)
+
+
+def train_data_iterator(
+        df_train: pd.DataFrame,
+        train_allele_encoding: AlleleEncoding,
+        batch_size: int = 1024,
+) -> Iterator[tuple[AlleleEncoding, EncodableSequences, np.ndarray]]:
+
+    # Supported alleles and filtering
+    alleles = df_train.allele.unique()
+    usable_alleles = [
+        c for c in alleles
+        if c in train_allele_encoding.allele_to_sequence
+    ]
+    print("Using %d / %d alleles" % (len(usable_alleles), len(alleles)))
+    print("Skipped alleles: ", [
+        c for c in alleles
+        if c not in train_allele_encoding.allele_to_sequence
+    ])
+    df_train = df_train.query("allele in @usable_alleles")
+
+    # Divide into batches
+    n_splits = np.ceil(len(df_train) / batch_size)
+
+    while True:
+        epoch_dfs = np.array_split(df_train.copy(), n_splits)
+        for (k, df) in enumerate(epoch_dfs):
+            if len(df) == 0:
+                continue
+            encodable_peptides = EncodableSequences(df.peptide.values)
+            train_allele_encoding = AlleleEncoding(
+                alleles=df.allele.values,
+                borrow_from=train_allele_encoding,
+            )
+            yield (train_allele_encoding, encodable_peptides, df.hit.values)
 
 
 class Class1BinaryPredictor(Class1AffinityPredictor):
@@ -36,9 +70,9 @@ class Class1BinaryPredictor(Class1AffinityPredictor):
             df_train: pd.DataFrame,
             df_val: pd.DataFrame,
             architecture_hyperparameters=base_hyperparameters,
-            models_dir_for_save=str(data_path / "models"),
-            batch_size: int = 2014,
-            epochs=1000,
+            models_dir_for_save=settings.models_path,
+            batch_size: int = 1024,
+            epochs=5,
             min_epochs=0,
             patience=10,
             min_delta=0.0,
@@ -49,19 +83,21 @@ class Class1BinaryPredictor(Class1AffinityPredictor):
         # val
         val_allele_encoding = AlleleEncoding(
             df_val.allele.values,
-            borrow_from=self.master_allele_encoding,
+            allele_to_sequence=dict(self.allele_to_sequence),
         )
         val_peptides = EncodableSequences(df_val.peptide.values)
 
         # train iterator
+        train_allele_encoding = AlleleEncoding(
+            allele_to_sequence=dict(self.allele_to_sequence),
+        )
         train_generator = train_data_iterator(
             df_train=df_train,
-            allele_encoding=self.master_allele_encoding,
+            train_allele_encoding=train_allele_encoding,
             batch_size=batch_size,
         )
         steps_per_epoch = np.ceil(len(df_train) / batch_size)
 
-        logging.info("Training model")
         model = Class1BinaryNeuralNetwork(**architecture_hyperparameters)
         model.fit_generator(
             generator=train_generator,
@@ -95,3 +131,5 @@ class Class1BinaryPredictor(Class1AffinityPredictor):
 
         self.clear_cache()
         return model
+
+

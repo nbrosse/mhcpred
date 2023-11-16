@@ -59,7 +59,7 @@ def svd_orthonormal(shape):
 def get_activations(model, layer, X_batch):
     configure_tensorflow()
     from tensorflow.keras.models import Model
-    pred = model(X_batch)
+    _ = model(X_batch)  # to set the input shapes
     intermediate_layer_model = Model(
         inputs=model.input,
         outputs=layer.get_output_at(0)

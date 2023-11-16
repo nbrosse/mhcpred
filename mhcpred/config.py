@@ -5,6 +5,3 @@ settings = Dynaconf(
     settings_files=['settings.toml'],
     load_dotenv=False,
 )
-
-# `envvar_prefix` = export envvars with `export DYNACONF_FOO=bar`.
-# `settings_files` = Load these files in the order.
