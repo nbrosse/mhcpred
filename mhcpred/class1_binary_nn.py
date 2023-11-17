@@ -13,12 +13,13 @@ from mhcpred.data_dependent_weights_initialization import lsuv_init
 
 
 class Class1BinaryNeuralNetwork(Class1NeuralNetwork):
-
     def __init__(self, **hyperparameters) -> None:
         super(Class1BinaryNeuralNetwork, self).__init__(**hyperparameters)
 
     @staticmethod
-    def data_dependent_weights_initialization(network, x_dict=None, method="lsuv", verbose=1):
+    def data_dependent_weights_initialization(
+        network, x_dict=None, method="lsuv", verbose=1
+    ):
         """
         Data dependent weights initialization.
 
@@ -40,23 +41,24 @@ class Class1BinaryNeuralNetwork(Class1NeuralNetwork):
         else:
             raise RuntimeError("Unsupported init method: ", method)
 
-    def fit_generator(
-            self,
-            generator,
-            validation_peptide_encoding,
-            validation_affinities,
-            validation_allele_encoding=None,
-            validation_inequalities=None,
-            validation_output_indices=None,
-            steps_per_epoch=10,
-            epochs=1000,
-            min_epochs=0,
-            patience=10,
-            min_delta=0.0,
-            verbose=1,
-            progress_callback=None,
-            progress_preamble="",
-            progress_print_interval=5.0):
+    def fit_generator(  # noqa: C901
+        self,
+        generator,
+        validation_peptide_encoding,
+        validation_affinities,
+        validation_allele_encoding=None,
+        validation_inequalities=None,
+        validation_output_indices=None,
+        steps_per_epoch=10,
+        epochs=1000,
+        min_epochs=0,
+        patience=10,
+        min_delta=0.0,
+        verbose=1,
+        progress_callback=None,
+        progress_preamble="",
+        progress_print_interval=5.0,
+    ):
         """
         Fit using a generator. Does not support many of the features of fit(),
         such as random negative peptides.
@@ -102,7 +104,7 @@ class Class1BinaryNeuralNetwork(Class1NeuralNetwork):
         if self.network() is None:
             self._network = self.make_network(
                 allele_representations=allele_representations,
-                **self.network_hyperparameter_defaults.subselect(self.hyperparameters)
+                **self.network_hyperparameter_defaults.subselect(self.hyperparameters),
             )
             if verbose > 0:
                 self.network().summary()
@@ -200,24 +202,24 @@ class Class1BinaryNeuralNetwork(Class1NeuralNetwork):
             )
 
             progress_message = (
-                    "epoch %3d/%3d [%0.2f sec.]: loss=%g val_loss=%g. Min val "
-                    "loss %g at epoch %s. Cum. points: %d. Stop at epoch %d."
-                    % (
-                        epoch,
-                        epochs,
-                        epoch_time,
-                        fit_info["loss"][-1],
-                        val_loss,
-                        min_val_loss,
-                        min_val_loss_iteration,
-                        mutable_generator_state["yielded_values"],
-                        patience_epoch_threshold,
-                    )
+                "epoch %3d/%3d [%0.2f sec.]: loss=%g val_loss=%g. Min val "
+                "loss %g at epoch %s. Cum. points: %d. Stop at epoch %d."
+                % (
+                    epoch,
+                    epochs,
+                    epoch_time,
+                    fit_info["loss"][-1],
+                    val_loss,
+                    min_val_loss,
+                    min_val_loss_iteration,
+                    mutable_generator_state["yielded_values"],
+                    patience_epoch_threshold,
+                )
             ).strip()
 
             # Print progress no more often than once every few seconds.
             if progress_print_interval is not None and (
-                    time.time() - last_progress_print > progress_print_interval
+                time.time() - last_progress_print > progress_print_interval
             ):
                 print(progress_preamble, progress_message)
                 last_progress_print = time.time()
@@ -236,11 +238,12 @@ class Class1BinaryNeuralNetwork(Class1NeuralNetwork):
         self.fit_info.append(dict(fit_info))
 
     def predict(
-            self,
-            peptides,
-            allele_encoding=None,
-            batch_size=DEFAULT_PREDICT_BATCH_SIZE,
-            output_index=0):
+        self,
+        peptides,
+        allele_encoding=None,
+        batch_size=DEFAULT_PREDICT_BATCH_SIZE,
+        output_index=0,
+    ):
         """
         Predict affinities.
 

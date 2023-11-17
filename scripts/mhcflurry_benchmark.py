@@ -24,4 +24,3 @@ def predict_with_mhcflurry() -> pd.DataFrame:
 
 if __name__ == "__main__":
     predict_with_mhcflurry()
-

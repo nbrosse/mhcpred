@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
-from sklearn.metrics import accuracy_score, confusion_matrix, balanced_accuracy_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix
 
 from mhcpred.config import settings
 

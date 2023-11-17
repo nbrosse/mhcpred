@@ -17,22 +17,20 @@ data_path = Path(settings.data_path)
 
 
 def train_data_iterator(
-        df_train: pd.DataFrame,
-        train_allele_encoding: AlleleEncoding,
-        batch_size: int = 1024,
+    df_train: pd.DataFrame,
+    train_allele_encoding: AlleleEncoding,
+    batch_size: int = 1024,
 ) -> Iterator[tuple[AlleleEncoding, EncodableSequences, np.ndarray]]:
-
     # Supported alleles and filtering
     alleles = df_train.allele.unique()
     usable_alleles = [
-        c for c in alleles
-        if c in train_allele_encoding.allele_to_sequence
+        c for c in alleles if c in train_allele_encoding.allele_to_sequence
     ]
     print("Using %d / %d alleles" % (len(usable_alleles), len(alleles)))
-    print("Skipped alleles: ", [
-        c for c in alleles
-        if c not in train_allele_encoding.allele_to_sequence
-    ])
+    print(
+        "Skipped alleles: ",
+        [c for c in alleles if c not in train_allele_encoding.allele_to_sequence],
+    )
     df_train = df_train.query("allele in @usable_alleles")
 
     # Divide into batches
@@ -40,7 +38,7 @@ def train_data_iterator(
 
     while True:
         epoch_dfs = np.array_split(df_train.copy(), n_splits)
-        for (k, df) in enumerate(epoch_dfs):
+        for k, df in enumerate(epoch_dfs):
             if len(df) == 0:
                 continue
             encodable_peptides = EncodableSequences(df.peptide.values)
@@ -52,7 +50,6 @@ def train_data_iterator(
 
 
 class Class1BinaryPredictor(Class1AffinityPredictor):
-
     def __init__(self, allele_to_sequence=None) -> None:
         super(Class1BinaryPredictor, self).__init__(
             allele_to_allele_specific_models=None,
@@ -66,20 +63,20 @@ class Class1BinaryPredictor(Class1AffinityPredictor):
         )
 
     def fit(
-            self,
-            df_train: pd.DataFrame,
-            df_val: pd.DataFrame,
-            architecture_hyperparameters=base_hyperparameters,
-            models_dir_for_save=settings.models_path,
-            batch_size: int = 1024,
-            epochs=5,
-            min_epochs=0,
-            patience=10,
-            min_delta=0.0,
-            verbose=1,
-            progress_preamble="",
-            progress_print_interval=5.0):
-
+        self,
+        df_train: pd.DataFrame,
+        df_val: pd.DataFrame,
+        architecture_hyperparameters=base_hyperparameters,
+        models_dir_for_save=settings.models_path,
+        batch_size: int = 1024,
+        epochs=5,
+        min_epochs=0,
+        patience=10,
+        min_delta=0.0,
+        verbose=1,
+        progress_preamble="",
+        progress_print_interval=5.0,
+    ):
         # val
         val_allele_encoding = AlleleEncoding(
             df_val.allele.values,
@@ -117,19 +114,24 @@ class Class1BinaryPredictor(Class1AffinityPredictor):
         )
 
         model_name = self.model_name("pan-class1", 0)
-        row = pd.Series(collections.OrderedDict([
-            ("model_name", model_name),
-            ("allele", "pan-class1"),
-            ("config_json", json.dumps(model.get_config())),
-            ("model", model),
-        ])).to_frame().T
-        self._manifest_df = pd.concat(
-            [self.manifest_df, row], ignore_index=True)
+        row = (
+            pd.Series(
+                collections.OrderedDict(
+                    [
+                        ("model_name", model_name),
+                        ("allele", "pan-class1"),
+                        ("config_json", json.dumps(model.get_config())),
+                        ("model", model),
+                    ]
+                )
+            )
+            .to_frame()
+            .T
+        )
+        self._manifest_df = pd.concat([self.manifest_df, row], ignore_index=True)
         self.class1_pan_allele_models.append(model)
         if models_dir_for_save:
             self.save(models_dir_for_save, model_names_to_write=[model_name])
 
         self.clear_cache()
         return model
-
-

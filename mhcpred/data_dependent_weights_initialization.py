@@ -39,6 +39,7 @@ See:
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
+
 import numpy
 from mhcflurry.common import configure_tensorflow
 
@@ -59,16 +60,14 @@ def svd_orthonormal(shape):
 def get_activations(model, layer, X_batch):
     configure_tensorflow()
     from tensorflow.keras.models import Model
+
     _ = model(X_batch)  # to set the input shapes
-    intermediate_layer_model = Model(
-        inputs=model.input,
-        outputs=layer.get_output_at(0)
-    )
+    intermediate_layer_model = Model(inputs=model.input, outputs=layer.get_output_at(0))
     activations = intermediate_layer_model.predict(X_batch)
     return activations
 
 
-def lsuv_init(model, batch, verbose=True, margin=0.1, max_iter=100):
+def lsuv_init(model, batch, verbose=True, margin=0.1, max_iter=100):  # noqa: C901
     """
     Initialize neural network weights using layer-sequential unit-variance
     initialization.
@@ -93,7 +92,8 @@ def lsuv_init(model, batch, verbose=True, margin=0.1, max_iter=100):
         Same as what was passed in.
     """
     configure_tensorflow()
-    from tensorflow.keras.layers import Dense, Convolution2D
+    from tensorflow.keras.layers import Convolution2D, Dense
+
     needed_variance = 1.0
     layers_inintialized = 0
     for layer in model.layers:
@@ -122,14 +122,14 @@ def lsuv_init(model, batch, verbose=True, margin=0.1, max_iter=100):
                     iteration,
                     needed_variance,
                     margin,
-                    variance)
+                    variance,
+                )
 
             if numpy.abs(numpy.sqrt(variance)) < 1e-7:
                 break  # avoid zero division
 
             weights_and_biases = layer.get_weights()
-            weights_and_biases[0] /= numpy.sqrt(variance) / numpy.sqrt(
-                needed_variance)
+            weights_and_biases[0] /= numpy.sqrt(variance) / numpy.sqrt(needed_variance)
             layer.set_weights(weights_and_biases)
             activations = get_activations(model, layer, batch)
             variance = numpy.var(activations)

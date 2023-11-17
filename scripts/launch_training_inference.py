@@ -8,17 +8,19 @@ from mhcflurry.allele_encoding import AlleleEncoding
 from mhcflurry.encodable_sequences import EncodableSequences
 from sklearn.model_selection import train_test_split
 
-from mhcpred.config import settings
-from mhcpred.data import get_train_data, get_test_data
-from mhcpred.hyperparameters import base_hyperparameters
 from mhcpred.class1_binary_nn import Class1BinaryNeuralNetwork
+from mhcpred.config import settings
+from mhcpred.data import get_test_data, get_train_data
+from mhcpred.hyperparameters import base_hyperparameters
 
 data_path = Path(settings.data_path)
 models_path = Path(settings.models_path)
 output_path = Path(settings.output_path)
 
 
-allele_sequences = pd.read_csv(str(data_path / "allele_sequences.csv"), index_col=0).iloc[:, 0]
+allele_sequences = pd.read_csv(
+    str(data_path / "allele_sequences.csv"), index_col=0
+).iloc[:, 0]
 
 df_total_train = get_train_data()
 df_test = get_test_data()
@@ -28,10 +30,12 @@ allele_sequences_in_use = allele_sequences[allele_sequences.index.isin(alleles_i
 
 allele_encoding = AlleleEncoding(
     alleles=allele_sequences_in_use.index.values,
-    allele_to_sequence=allele_sequences_in_use.to_dict()
+    allele_to_sequence=allele_sequences_in_use.to_dict(),
 )
 
-df_train, df_val = train_test_split(df_total_train, test_size=0.1, shuffle=True, stratify=df_total_train.hit.values)
+df_train, df_val = train_test_split(
+    df_total_train, test_size=0.1, shuffle=True, stratify=df_total_train.hit.values
+)
 
 val_peptides = EncodableSequences(df_val.peptide.values)
 val_alleles = AlleleEncoding(
@@ -39,23 +43,22 @@ val_alleles = AlleleEncoding(
     allele_to_sequence=allele_sequences_in_use.to_dict(),
 )
 
-def train_data_iterator(
-        df_train: pd.DataFrame,
-        train_allele_encoding: AlleleEncoding,
-        batch_size: int = 1024,
-) -> Iterator[tuple[AlleleEncoding, EncodableSequences, np.ndarray]]:
 
+def train_data_iterator(
+    df_train: pd.DataFrame,
+    train_allele_encoding: AlleleEncoding,
+    batch_size: int = 1024,
+) -> Iterator[tuple[AlleleEncoding, EncodableSequences, np.ndarray]]:
     # Supported alleles and filtering
     alleles = df_train.allele.unique()
     usable_alleles = [
-        c for c in alleles
-        if c in train_allele_encoding.allele_to_sequence
+        c for c in alleles if c in train_allele_encoding.allele_to_sequence
     ]
     print("Using %d / %d alleles" % (len(usable_alleles), len(alleles)))
-    print("Skipped alleles: ", [
-        c for c in alleles
-        if c not in train_allele_encoding.allele_to_sequence
-    ])
+    print(
+        "Skipped alleles: ",
+        [c for c in alleles if c not in train_allele_encoding.allele_to_sequence],
+    )
     df_train = df_train.query("allele in @usable_alleles")
 
     # Divide into batches
@@ -63,7 +66,7 @@ def train_data_iterator(
 
     while True:
         epoch_dfs = np.array_split(df_train.copy(), n_splits)
-        for (k, df) in enumerate(epoch_dfs):
+        for k, df in enumerate(epoch_dfs):
             if len(df) == 0:
                 continue
             encodable_peptides = EncodableSequences(df.peptide.values)
