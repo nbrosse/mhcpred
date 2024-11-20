@@ -53,3 +53,6 @@ Of course, the code here is a very simple version, and there are many possible w
 - Use the folds to tune the hyperparameters or train an ensemble of networks 
 - improve the architecture of the models: transformer, convolution.
 - augment the dataset including BA data and EL MA data.
+
+
+/Users/nicolasbrosse/Library/Application Support/mhcflurry/4/2.2.0

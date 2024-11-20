@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix
 
-from mhcpred.config import settings
+from src.mhcpred.config import settings
 
 output_path = Path(settings.output_path)
 

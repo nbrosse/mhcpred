@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from mhcflurry.common import normalize_allele_name
 
-from mhcpred.config import settings
+from src.mhcpred.config import settings
 
 data_path = Path(settings.data_path)
 netmhcpan41_data_path = data_path / "netmhcpan41_data"

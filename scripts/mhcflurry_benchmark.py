@@ -3,8 +3,8 @@ from pathlib import Path
 import pandas as pd
 from mhcflurry import Class1AffinityPredictor
 
-from mhcpred.config import settings
-from mhcpred.data import get_test_data
+from src.mhcpred.config import settings
+from src.mhcpred.data import get_test_data
 
 output_path = Path(settings.output_path)
 

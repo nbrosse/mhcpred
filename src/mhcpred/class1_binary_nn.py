@@ -9,7 +9,7 @@ from mhcflurry.common import configure_tensorflow
 from mhcflurry.custom_loss import get_loss
 from mhcflurry.encodable_sequences import EncodableSequences
 
-from mhcpred.data_dependent_weights_initialization import lsuv_init
+from src.mhcpred.data_dependent_weights_initialization import lsuv_init
 
 
 class Class1BinaryNeuralNetwork(Class1NeuralNetwork):

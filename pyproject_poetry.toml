@@ -1,0 +1,58 @@
+[tool.poetry]
+name = "mhcpred"
+version = "0.1.0"
+description = ""
+authors = ["nicolas.brosse <nbrosse@gmail.com>"]
+readme = "README.md"
+packages = [{include = "mhcpred"}]
+
+[tool.poetry.dependencies]
+python = "~3.9"
+dynaconf = "^3.2.4"
+numpy = "^1.26.2"
+pandas = "^2.1.3"
+tensorflow = "^2.14.0"
+mhcflurry = "^2.1.0"
+scikit-learn = "^1.3.2"
+jupyter = "^1.0.0"
+matplotlib = "^3.8.1"
+taskipy = "^1.12.0"
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.17.2"
+black = "^23.11.0"
+flake8 = "^6.1.0"
+isort = "^5.12.0"
+
+[tool.taskipy.tasks]
+black = "black mhcpred/ scripts/"
+linter = "flake8 mhcpred/ scripts/"
+isort = "isort mhcpred/ scripts/"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+skip-string-normalization = true
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+atomic = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

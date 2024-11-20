@@ -8,10 +8,10 @@ from mhcflurry.allele_encoding import AlleleEncoding
 from mhcflurry.encodable_sequences import EncodableSequences
 from sklearn.model_selection import train_test_split
 
-from mhcpred.class1_binary_nn import Class1BinaryNeuralNetwork
-from mhcpred.config import settings
-from mhcpred.data import get_test_data, get_train_data
-from mhcpred.hyperparameters import base_hyperparameters
+from src.mhcpred.class1_binary_nn import Class1BinaryNeuralNetwork
+from src.mhcpred.config import settings
+from src.mhcpred.data import get_test_data, get_train_data
+from src.mhcpred.hyperparameters import base_hyperparameters
 
 data_path = Path(settings.data_path)
 models_path = Path(settings.models_path)
