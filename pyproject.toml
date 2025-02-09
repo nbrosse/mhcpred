@@ -2,7 +2,7 @@
 name = "mhcpred"
 version = "0.1.0"
 description = ""
-authors = ["nicolas.brosse <nbrosse@gmail.com>"]
+authors = ["nicolas.brosse"]
 readme = "README.md"
 packages = [{include = "mhcpred"}]
 
